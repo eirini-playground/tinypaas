@@ -1,0 +1,24 @@
+FROM opensuse/leap:15.1
+
+RUN zypper in -y git
+RUN mkdir -p ~/.ssh
+RUN chmod 0700 ~/.ssh
+RUN ssh-keygen -A
+# TODO: Change this to a build arg or something.
+RUN echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC/kII2Q5Vsb6x0TFKtatkBz1UtGotWMNentehTwMLeBt2hCEioRIJ3ARSgkHGgC1PrHYBn7FbrJibodXTZkOTvdMrBgCOc+2rDlqnZ8Xak3JtkMjRO6ubvnhrwpQEhIeYyD5vpH1A0Loot8iyKNBiQBLMfbWcU8vXC42y/7M1hqd7laRCg/jFtAbK7LoAprc4sndDYYltUOnIKCK+aWIIUrLeMEtQTgsr0bzvXBqS8PCEKZy3R4gkkOrM9+eFQDH+iDO7PIWuRk108G9nAsTd9Y4xeBFfrq2uDw3rPUwU5Ap1eWdM7h0wm6ChNIRa/sUDq9a8jMSeiiq9mEVdv65qPTsSWKAH6GcxZVhGwGKXJEw3Yo3Ezr2Gh9IAZCiWEdSQqisZh3N0pTWEiu4S7R8jm+mfBj71f83EXtCPKJeP9WsUHEvmle1PAnOHejVMuPNo5TkifPFyzm8Tx37/0ipdf/8Kz6azVNwv5BlpPslSxzObLeEvtDHiyUd9II6mgdsE= dimitris@Buffalo" > /root/.ssh/authorized_keys
+RUN echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+RUN echo "RSAAuthentication yes" >> /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+# https://docs.docker.com/engine/examples/running_ssh_service/#run-a-test_sshd-container
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+
+RUN git init --bare /root/myproject.git
+# Setup post-receive hook
+# https://gist.github.com/noelboss/3fe13927025b89757f8fb12e9066f2fa
+COPY post-receive /root/myproject.git/hooks/post-receive
+RUN chmod +x /root/myproject.git/hooks/post-receive
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D", "-E", "/root/sshd_logs"]
