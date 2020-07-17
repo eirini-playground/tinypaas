@@ -1,0 +1,16 @@
+#!/bin/bash
+BRANCH="master"
+
+while read oldrev newrev ref
+do
+	# only checking out the master (or whatever branch you would like to deploy)
+	if [ "$ref" = "refs/heads/$BRANCH" ];
+	then
+    echo "These are the files of your project:" > /root/log
+    ls /root/myproject.git >> /root/log
+		#echo "Ref $ref received. Deploying ${BRANCH} branch to production..."
+		#git --work-tree=$TARGET --git-dir=$GIT_DIR checkout -f $BRANCH
+	else
+    echo "You didn't push master" > /root/log
+	fi
+done
