@@ -12,3 +12,21 @@ TODO:
 Define what happens next. Obviously there is going to be a deployment for the application which will use this updated image.
 
 But who is going to create that deployment? How can the user create more applications? (thus creating more remotes etc).
+
+## Deploy the git remote
+
+
+```bash
+docker run -d git_remote
+```
+
+## Setup your git repo
+
+In your .git/config file put this remote (use your container's IP address):
+
+```
+[remote "local"]
+	url = root@172.17.0.2:myproject.git
+	fetch = +refs/heads/*:refs/remotes/local/*
+
+```
