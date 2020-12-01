@@ -11,7 +11,6 @@ There is no real magic in it. Here is the flow:
 
 ## Deploy the git remote
 
-
 ```bash
 docker run -d git_remote
 ```
