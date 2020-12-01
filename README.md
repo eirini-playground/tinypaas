@@ -1,17 +1,13 @@
-This is a project which allows developers to deploy applications on Kubernetes using [paketo buildpacks](https://paketo.io/) with a simple `git push`.
+This is a project which allows developers to deploy applications on Kubernetes using simple `git push`.
 
 ## How
 
 There is no real magic in it. Here is the flow:
 
-- User pushes the code to a git remote which we run in a pod>
-- kpack is configured to poll our git remote for updates. When the update happens, a new image is built.
-- kpack is configured to push the image to a docker repository which we run as a pod.
-
-TODO:
-Define what happens next. Obviously there is going to be a deployment for the application which will use this updated image.
-
-But who is going to create that deployment? How can the user create more applications? (thus creating more remotes etc).
+- User pushes the code to a git remote which runs inside the kubernetes cluster and is dedicated to his app.
+- The git remote is configured to create a kpack "Image" as soon as code is pushed to it.
+- When the Image is built, one of our components creates an [Eirini](https://github.com/cloudfoundry-incubator/eirini) LRP for it and Eirini deploys the application.
+- Kpack is configured to push the image to a docker repository which we run as a pod.
 
 ## Deploy the git remote
 
