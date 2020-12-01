@@ -1,0 +1,171 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eirini-routing
+  namespace: eirini-core
+spec:
+  selector:
+    matchLabels:
+      name: eirini-routing
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: eirini-routing
+    spec:
+      dnsPolicy: ClusterFirst
+      serviceAccountName: eirini-routing
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: routing
+        image: eirini/routing
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 15m
+            memory: 15Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eirini-routing
+  namespace: eirini-core
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: eirini-routing-psp
+  namespace: eirini-core
+rules:
+- apiGroups:
+  - policy
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+  resourceNames:
+  - eirini-routing
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - create
+  - update
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: eirini-routing-psp
+  namespace: eirini-core
+roleRef:
+  kind: Role
+  name: eirini-routing-psp
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: eirini-routing
+  namespace: eirini-core
+
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: eirini-routing
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'secret'
+    - 'projected'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    # This policy assumes the nodes are using AppArmor rather than SELinux.
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: false
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: eirini-routing
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - watch
+  - list
+  - create
+  - update
+  - patch
+- apiGroups:
+  - "eirini.cloudfoundry.org"
+  resources:
+  - lrps
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - watch
+  - list
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: eirini-routing
+roleRef:
+  kind: ClusterRole
+  name: eirini-routing
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: eirini-routing
+  namespace: eirini-core
