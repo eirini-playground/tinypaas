@@ -10,6 +10,7 @@ trap "echo $TMPDIR" EXIT
 DOCKER_REGISTRY_SECRET_NAME=tinypaas-registry-credentials
 GIT_SECRET_NAME=tinypaas-git-secret
 BUILDER_NAME=tinypaas-builder
+KPACK_SERVICE_ACCOUNT=tinypaas-service-account
 
 pushd $TMPDIR
 echo "Fetching kpack release"
@@ -48,13 +49,13 @@ EOF
   kubectl apply -f git-secret.yaml -n "$NAMESPACE"
 fi
 
-if ! kubectl get serviceaccount -n "$NAMESPACE" tinypaas-service-account &>/dev/null; then
+if ! kubectl get serviceaccount -n "$NAMESPACE" "$KPACK_SERVICE_ACCOUNT" &>/dev/null; then
   echo "Creating service account for kpack"
   cat >service-account.yaml <<EOF
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: tinypaas-service-account
+  name: $KPACK_SERVICE_ACCOUNT
   namespace: $NAMESPACE
 secrets:
 - name: $DOCKER_REGISTRY_SECRET_NAME
@@ -106,7 +107,7 @@ metadata:
   name: $BUILDER_NAME
   namespace: $NAMESPACE
 spec:
-  serviceAccount: tinypaas-service-account
+  serviceAccount: $KPACK_SERVICE_ACCOUNT
   tag: eiriniuser/builder
   stack:
     name: tinypaas-cluster-stack
@@ -131,4 +132,5 @@ namespace: $NAMESPACE
 git_secret_name: $GIT_SECRET_NAME
 docker_registry_secret_name: $DOCKER_REGISTRY_SECRET_NAME
 builder_name: $BUILDER_NAME
+kpack_service_account: $KPACK_SERVICE_ACCOUNT
 CONFIG
