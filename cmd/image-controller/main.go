@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	eirinischeme "code.cloudfoundry.org/eirini/pkg/generated/clientset/versioned/scheme"
 	"code.cloudfoundry.org/lager"
 	"github.com/go-logr/logr"
 	"github.com/jimmykarily/tinypaas/image"
@@ -24,12 +25,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	err = eirinischeme.AddToScheme(kpackscheme.Scheme)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	kubeConfig, err := clientcmd.BuildConfigFromFlags("", "")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = runtimeclient.New(kubeConfig, runtimeclient.Options{Scheme: kscheme.Scheme})
+	runtimeClient, err := runtimeclient.New(kubeConfig, runtimeclient.Options{Scheme: kpackscheme.Scheme})
 	if err != nil {
 		log.Fatalf("Failed to create k8s runtime client: %s", err)
 	}
@@ -44,7 +50,7 @@ func main() {
 
 	managerOptions := manager.Options{
 		MetricsBindAddress: "0",
-		Scheme:             kscheme.Scheme,
+		Scheme:             kpackscheme.Scheme,
 		Logger:             NewLagerLogr(logger),
 		LeaderElection:     true,
 		LeaderElectionID:   "eirini-controller-leader",
@@ -55,14 +61,15 @@ func main() {
 		log.Fatalf("Failed to create k8s controller runtime manager: %s", err)
 	}
 
-	imageReconciler := image.NewReconciler(logger)
+	imageReconciler := image.NewReconciler(logger, runtimeClient)
 
 	err = builder.
 		ControllerManagedBy(mgr).
 		For(&kpackv1alpha1.Image{}).
 		Complete(imageReconciler)
+
 	if err != nil {
-		log.Fatalf("Failed to build LRP reconciler: %s", err)
+		log.Fatalf("Failed to build Image reconciler: %s", err)
 	}
 
 	err = mgr.Start(ctrl.SetupSignalHandler())

@@ -13,9 +13,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func NewReconciler(logger lager.Logger) *Reconciler {
+func NewReconciler(logger lager.Logger, runtimeClient client.Client) *Reconciler {
 	return &Reconciler{
-		logger: logger,
+		logger:        logger,
+		runtimeClient: runtimeClient,
 	}
 }
 
@@ -30,7 +31,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			"name":      request.NamespacedName.Name,
 			"namespace": request.NamespacedName.Namespace,
 		})
+	logger.Debug("reconcile started")
+	defer logger.Debug("reconcile finished")
 
+	logger.Debug("getting image")
 	image := kpackv1alphav1.Image{}
 	if err := r.runtimeClient.Get(context.Background(), request.NamespacedName, &image); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -42,14 +46,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, errors.Wrap(err, "failed to get image")
 	}
 
+	logger.Debug("checking image readiness")
 	if !imageIsReady(image) {
 		logger.Debug("image not yet ready")
 		return reconcile.Result{}, nil
 	}
 
+	logger.Debug("desiring lrp")
 	err := r.desireLRP(image)
 	if err != nil {
 		logger.Error("failed-to-desire-lrp", err)
+		return reconcile.Result{}, errors.Wrap(err, "failed to desire lrp")
 	}
 
 	return reconcile.Result{}, nil
@@ -58,18 +65,20 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) desireLRP(image kpackv1alphav1.Image) error {
 	lrp := &eiriniv1.LRP{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "carl",
+			Name:      image.Name,
+			Namespace: "tinypaas-workloads",
 		},
 		Spec: eiriniv1.LRPSpec{
-			Image:   image.Spec.Source.Registry.Image,
-			DiskMB:  512,
-			AppGUID: "aaaap-guid",
-			GUID:    "much-guid",
-			Version: "v1",
+			Image:     image.Spec.Source.Registry.Image,
+			DiskMB:    512,
+			AppGUID:   "aaaap-guid",
+			GUID:      "much-guid",
+			Version:   "v1",
+			AppRoutes: []eiriniv1.Route{},
 		},
 	}
-	r.runtimeClient.Create(context.Background(), lrp)
-	return nil
+
+	return r.runtimeClient.Create(context.Background(), lrp)
 }
 
 func imageIsReady(image kpackv1alphav1.Image) bool {
