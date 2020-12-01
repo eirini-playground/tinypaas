@@ -30,6 +30,7 @@ func Execute() {
 		Run:   create,
 	}
 
+	rootCmd.PersistentFlags().StringP("kubeconfig", "k", "", "The path to the your kubeconfig file")
 	createCmd.Flags().StringP("name", "n", "", "The name of the application")
 
 	rootCmd.AddCommand(versionCmd)
