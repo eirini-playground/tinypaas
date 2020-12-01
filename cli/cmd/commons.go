@@ -19,6 +19,11 @@ func ExitfIfError(err error, message string) {
 	}
 }
 
+func ExitfWithMessage(message string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, message, args...)
+	os.Exit(1)
+}
+
 func CreateKubeClient(configPath string) kubernetes.Interface {
 	config, err := clientcmd.BuildConfigFromFlags("", configPath)
 	ExitfIfError(err, "an unexpected error occurred")

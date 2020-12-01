@@ -1,0 +1,6 @@
+namespace: tinypaas
+git_secret_name: tinypaas-git-secret
+docker_registry_secret_name: tinypaas-registry-credentials
+kubeconfig_path: /home/dkarakasilis/.kube/config
+kpack_service_account: tinypaas-service-account
+builder_name: tinypaas-builder

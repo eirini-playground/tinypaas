@@ -15,6 +15,8 @@ type Config struct {
 	Namespace                string `yaml:"namespace"`
 	GitSecretName            string `yaml:"git_secret_name"`
 	DockerRegistrySecretName string `yaml:"docker_registry_secret_name"`
+	BuilderName              string `yaml:"builder_name"`
+	KpackServiceAccount      string `yaml:"kpack_service_account"`
 }
 
 func Execute() {
@@ -50,6 +52,9 @@ func Execute() {
 	}
 
 	createCmd.Flags().StringP("name", "n", "", "The name of the application")
+	createCmd.Flags().StringP("git-url", "u", "", "The git remote (the SSH url)")
+	createCmd.Flags().StringP("git-branch", "b", "tiny-paas", "The git branch to track (default tiny-paas)")
+	createCmd.Flags().StringP("docker-repo", "d", "", "Name of the docker repository")
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(createCmd)
@@ -70,6 +75,9 @@ func parseConfig(rootCmd *cobra.Command) (config Config) {
 
 	err = yaml.Unmarshal(configContents, &config)
 	ExitfIfError(err, "Couldn't parse the config file")
+
+	// TODO: validate struct contents
+	// e.g. mandatory fields: builder_name, kubeconfig_path, ...
 
 	return
 }

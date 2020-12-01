@@ -9,6 +9,7 @@ trap "echo $TMPDIR" EXIT
 
 DOCKER_REGISTRY_SECRET_NAME=tinypaas-registry-credentials
 GIT_SECRET_NAME=tinypaas-git-secret
+BUILDER_NAME=tinypaas-builder
 
 pushd $TMPDIR
 echo "Fetching kpack release"
@@ -102,7 +103,7 @@ if ! kubectl get builder -n "$NAMESPACE" tinypaas-builder &>/dev/null; then
 apiVersion: kpack.io/v1alpha1
 kind: Builder
 metadata:
-  name: tinypaas-builder
+  name: $BUILDER_NAME
   namespace: $NAMESPACE
 spec:
   serviceAccount: tinypaas-service-account
@@ -129,4 +130,5 @@ cat >config.yaml <<CONFIG
 namespace: $NAMESPACE
 git_secret_name: $GIT_SECRET_NAME
 docker_registry_secret_name: $DOCKER_REGISTRY_SECRET_NAME
+builder_name: $BUILDER_NAME
 CONFIG
