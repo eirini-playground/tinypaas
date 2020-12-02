@@ -56,7 +56,7 @@ func create(cmd *cobra.Command, args []string) {
 	_, err = client.KpackV1alpha1().Images(config.Namespace).Create(&image)
 	ExitfIfError(err, "Couldn't create a new Image for kpack")
 
-	fmt.Printf("Creating app %v", name)
+	fmt.Printf("Created app %v", name)
 }
 
 func failIfImageExists(client *kpack.Clientset, name, namespace string) {

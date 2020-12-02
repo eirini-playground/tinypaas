@@ -44,6 +44,13 @@ func Execute() {
 		Run:   create,
 	}
 
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Deletes the specified application",
+		Long:  "Deletes the specified application and cleans up the cluster from all traces of this app",
+		Run:   deleteapp,
+	}
+
 	gitPublicKeyCmd := &cobra.Command{
 		Use:   "git-public-key",
 		Short: "Prints the git public key",
@@ -56,8 +63,11 @@ func Execute() {
 	createCmd.Flags().StringP("git-branch", "b", "tiny-paas", "The git branch to track (default tiny-paas)")
 	createCmd.Flags().StringP("docker-repo", "d", "", "Name of the docker repository")
 
+	deleteCmd.Flags().StringP("name", "n", "", "The name of the application to delete")
+
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(gitPublicKeyCmd)
 
 	if err := rootCmd.Execute(); err != nil {
