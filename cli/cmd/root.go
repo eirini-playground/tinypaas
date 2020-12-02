@@ -65,6 +65,13 @@ func Execute() {
 		Run:   logs,
 	}
 
+	listCmd := &cobra.Command{
+		Use:   "list",
+		Short: "Lists pushed apps",
+		Long:  "Lists names of pushed apps along with their routes.",
+		Run:   list,
+	}
+
 	createCmd.Flags().StringP("name", "n", "", "The name of the application")
 	createCmd.Flags().StringP("git-url", "u", "", "The git remote (the SSH url)")
 	createCmd.Flags().StringP("git-branch", "b", "tiny-paas", "The git branch to track (default tiny-paas)")
@@ -78,6 +85,7 @@ func Execute() {
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(gitPublicKeyCmd)
 	rootCmd.AddCommand(logsCmd)
+	rootCmd.AddCommand(listCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
