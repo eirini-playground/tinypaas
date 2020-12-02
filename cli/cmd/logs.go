@@ -6,7 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -39,22 +39,17 @@ func printLogs(client kubernetes.Interface, namespace string, pods []corev1.Pod)
 		fmt.Println("No logs found")
 		return
 	}
-	wg := &sync.WaitGroup{}
 	allContainers := []corev1.Container{}
-	allContainers = append(allContainers, pods[0].Spec.Containers...)
 	allContainers = append(allContainers, pods[0].Spec.InitContainers...)
+	allContainers = append(allContainers, pods[0].Spec.Containers...)
 	for _, container := range allContainers {
-		wg.Add(1)
-		// TODO: we should collect all logs through a channel to be thread safe: https://stackoverflow.com/a/14694630
-		// TODO: Only start streaming a container when it passes the "Waiting" state (otherwise streaming will exit early).
-		// TODO: Exit if a container fails with error ? (e.g. if an init container fails, the next one will stay in Waiting state forever).
-		go tailContainerLogs(wg, client, namespace, pods[0].Name, container.Name)
+		err := tailContainerLogs(client, namespace, pods[0].Name, container.Name)
+		ExitfIfError(err, "failed to get build logs")
 	}
-	defer wg.Wait()
 }
 
-func tailContainerLogs(wg *sync.WaitGroup, client kubernetes.Interface, namespace, pod, container string) error {
-	defer wg.Done()
+func tailContainerLogs(client kubernetes.Interface, namespace, pod, container string) error {
+	var stream io.ReadCloser
 
 	req := client.CoreV1().RESTClient().Get().
 		Namespace(namespace).
@@ -65,9 +60,13 @@ func tailContainerLogs(wg *sync.WaitGroup, client kubernetes.Interface, namespac
 		Param("container", container).
 		Param("previous", strconv.FormatBool(false)).
 		Param("timestamps", strconv.FormatBool(false))
-	stream, err := req.Stream()
-	if err != nil {
-		return err
+	for {
+		var err error
+		stream, err = req.Stream()
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Second)
 	}
 
 	defer stream.Close()
