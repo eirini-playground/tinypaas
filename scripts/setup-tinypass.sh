@@ -2,8 +2,10 @@
 
 set -ex
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-EIRINI_DIR="$REPO_ROOT/../eirini"
+readonly REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+readonly EIRINI_DIR="$REPO_ROOT/../eirini"
+readonly DOCKERHUB_USERNAME=eiriniuser
+readonly DOCKERHUB_PASSWORD="${DOCKERHUB_PASSWORD:-$(pass eirini/docker-hub)}"
 
 ensure_kind_cluster() {
   local cluster_name
@@ -61,13 +63,14 @@ install_tinypaas() {
   {
     make routing image-controller
     make push-routing push-image-controller
+    kubectl delete -f deploy/ || true
     kubectl apply -f deploy/
   }
   popd
 }
 
 install_kpack() {
-  DOCKERHUB_USERNAME=eiriniuser DOCKERHUB_PASSWORD="$(pass eirini/docker-hub)" $REPO_ROOT/install_kpack.sh
+  $REPO_ROOT/install_kpack.sh
 }
 
 main() {

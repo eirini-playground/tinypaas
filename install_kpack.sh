@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-NAMESPACE=eirini-core
+NAMESPACE=eirini-workloads
 TMPDIR=$(mktemp -d)
 #trap "rm -rf $TMPDIR" EXIT
 trap "echo $TMPDIR" EXIT
@@ -134,5 +134,6 @@ namespace: $NAMESPACE
 git_secret_name: $GIT_SECRET_NAME
 docker_registry_secret_name: $DOCKER_REGISTRY_SECRET_NAME
 builder_name: $BUILDER_NAME
+kubeconfig_path: $HOME/.kube/config
 kpack_service_account: $KPACK_SERVICE_ACCOUNT
 CONFIG

@@ -88,7 +88,12 @@ func (r *RoutingReconciler) do(lrp *eiriniv1.LRP) error {
 
 func (r *RoutingReconciler) generateServiceSpec(lrp *eiriniv1.LRP) *corev1.Service {
 	servicePorts := []corev1.ServicePort{}
-	for _, port := range lrp.Spec.Ports {
+	ports := lrp.Spec.Ports
+	if len(lrp.Spec.Ports) == 0 {
+		ports = append(ports, 8080)
+	}
+
+	for _, port := range ports {
 		servicePorts = append(servicePorts, corev1.ServicePort{
 			Port:       port,
 			TargetPort: intstr.FromInt(int(port)),
@@ -182,7 +187,7 @@ func (r *RoutingReconciler) createService(lrp *eiriniv1.LRP) (*corev1.Service, e
 }
 
 func (r *RoutingReconciler) createIngressRules(lrp *eiriniv1.LRP) []v1beta1.IngressRule {
-	hostname := fmt.Sprintf("%s.%s.vcap.me", lrp.Spec.AppName, lrp.Namespace)
+	hostname := fmt.Sprintf("%s.%s.vcap.me", lrp.Name, lrp.Namespace)
 	port := 8080
 	if len(lrp.Spec.Ports) > 0 {
 		port = int(lrp.Spec.Ports[0])
