@@ -26,12 +26,16 @@ func logs(cmd *cobra.Command, args []string) {
 	client, err := kubernetes.NewForConfig(kubeConfig)
 	ExitfIfError(err, "Failed to create k8s client")
 
-	stagingPods, err := client.CoreV1().Pods(config.Namespace).List(metav1.ListOptions{
+	printStagingLogs(client, config.Namespace, name)
+}
+
+func printStagingLogs(client kubernetes.Interface, namespace, name string) {
+	stagingPods, err := client.CoreV1().Pods(namespace).List(metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("image.kpack.io/image=%s", name),
 	})
 	ExitfIfError(err, "Couldn't get staging logs for app")
 
-	printLogs(client, config.Namespace, stagingPods.Items)
+	printLogs(client, namespace, stagingPods.Items)
 }
 
 func printLogs(client kubernetes.Interface, namespace string, pods []corev1.Pod) {
@@ -39,10 +43,54 @@ func printLogs(client kubernetes.Interface, namespace string, pods []corev1.Pod)
 		fmt.Println("No logs found")
 		return
 	}
-	allContainers := []corev1.Container{}
-	allContainers = append(allContainers, pods[0].Spec.InitContainers...)
-	allContainers = append(allContainers, pods[0].Spec.Containers...)
-	for _, container := range allContainers {
+	initContainers := pods[0].Spec.InitContainers
+	containers := pods[0].Spec.Containers
+	for _, container := range initContainers {
+		for {
+			pod, err := client.CoreV1().Pods(namespace).Get(pods[0].Name, metav1.GetOptions{})
+			if err != nil {
+				ExitfIfError(err, "Couldn't fetch a pod")
+			}
+			var s corev1.ContainerStatus
+			for _, s = range pod.Status.InitContainerStatuses {
+				if s.Name == container.Name {
+					break
+				}
+			}
+			if s.Name == "" {
+				time.Sleep(1 * time.Second)
+				continue
+			} else {
+				if s.State.Waiting == nil {
+					break
+				}
+			}
+		}
+
+		err := tailContainerLogs(client, namespace, pods[0].Name, container.Name)
+		ExitfIfError(err, "failed to get build logs")
+	}
+	for _, container := range containers {
+		for {
+			pod, err := client.CoreV1().Pods(namespace).Get(pods[0].Name, metav1.GetOptions{})
+			if err != nil {
+				ExitfIfError(err, "Couldn't fetch a pod")
+			}
+			var s corev1.ContainerStatus
+			for _, s = range pod.Status.InitContainerStatuses {
+				if s.Name == container.Name {
+					break
+				}
+			}
+			if s.Name == "" {
+				time.Sleep(1 * time.Second)
+				continue
+			} else {
+				if s.State.Waiting == nil {
+					break
+				}
+			}
+		}
 		err := tailContainerLogs(client, namespace, pods[0].Name, container.Name)
 		ExitfIfError(err, "failed to get build logs")
 	}
@@ -60,6 +108,7 @@ func tailContainerLogs(client kubernetes.Interface, namespace, pod, container st
 		Param("container", container).
 		Param("previous", strconv.FormatBool(false)).
 		Param("timestamps", strconv.FormatBool(false))
+
 	for {
 		var err error
 		stream, err = req.Stream()

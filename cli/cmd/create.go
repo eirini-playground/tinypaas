@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	kpack "github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -56,7 +58,22 @@ func create(cmd *cobra.Command, args []string) {
 	_, err = client.KpackV1alpha1().Images(config.Namespace).Create(&image)
 	ExitfIfError(err, "Couldn't create a new Image for kpack")
 
-	fmt.Printf("Created app %v", name)
+	k8sclient, err := kubernetes.NewForConfig(kubeConfig)
+	ExitfIfError(err, "Failed to create k8s client")
+
+	for {
+		stagingPods, err := k8sclient.CoreV1().Pods(config.Namespace).List(metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("image.kpack.io/image=%s", name),
+		})
+		ExitfIfError(err, "Failed to find staging pod.")
+
+		if len(stagingPods.Items) > 0 {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+
+	printStagingLogs(k8sclient, config.Namespace, name)
 }
 
 func failIfImageExists(client *kpack.Clientset, name, namespace string) {
