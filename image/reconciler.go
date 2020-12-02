@@ -6,9 +6,11 @@ import (
 	eiriniv1 "code.cloudfoundry.org/eirini/pkg/apis/eirini/v1"
 	"code.cloudfoundry.org/lager"
 	kpackv1alphav1 "github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
+	kpackscheme "github.com/pivotal/kpack/pkg/client/clientset/versioned/scheme"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -66,7 +68,7 @@ func (r *Reconciler) desireLRP(image kpackv1alphav1.Image) error {
 	lrp := &eiriniv1.LRP{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      image.Name,
-			Namespace: "tinypaas-workloads",
+			Namespace: "eirini-workloads",
 		},
 		Spec: eiriniv1.LRPSpec{
 			Image:     image.Spec.Source.Registry.Image,
@@ -76,6 +78,9 @@ func (r *Reconciler) desireLRP(image kpackv1alphav1.Image) error {
 			Version:   "v1",
 			AppRoutes: []eiriniv1.Route{},
 		},
+	}
+	if err := ctrl.SetControllerReference(&image, lrp, kpackscheme.Scheme); err != nil {
+		return err
 	}
 
 	return r.runtimeClient.Create(context.Background(), lrp)
