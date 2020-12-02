@@ -82,5 +82,5 @@ func (r *Reconciler) desireLRP(image kpackv1alphav1.Image) error {
 }
 
 func imageIsReady(image kpackv1alphav1.Image) bool {
-	return image.Spec.Source.Registry != nil || image.Spec.Source.Registry.Image == ""
+	return image.Spec.Source.Registry != nil && image.Spec.Source.Registry.Image != ""
 }
