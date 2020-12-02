@@ -45,7 +45,9 @@ func printLogs(client kubernetes.Interface, namespace string, pods []corev1.Pod)
 	allContainers = append(allContainers, pods[0].Spec.InitContainers...)
 	for _, container := range allContainers {
 		wg.Add(1)
-		// TODO: we should collectt all logs through a channel to be thread safe: https://stackoverflow.com/a/14694630
+		// TODO: we should collect all logs through a channel to be thread safe: https://stackoverflow.com/a/14694630
+		// TODO: Only start streaming a container when it passes the "Waiting" state (otherwise streaming will exit early).
+		// TODO: Exit if a container fails with error ? (e.g. if an init container fails, the next one will stay in Waiting state forever).
 		go tailContainerLogs(wg, client, namespace, pods[0].Name, container.Name)
 	}
 	defer wg.Wait()
