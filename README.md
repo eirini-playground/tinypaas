@@ -1,5 +1,7 @@
 This is a project which allows developers to deploy applications on Kubernetes using simple `git push`.
 
+[![asciicast](https://asciinema.org/a/vKZlkl1xdJnj2ZWKrpoYrxMcF.svg)](https://asciinema.org/a/vKZlkl1xdJnj2ZWKrpoYrxMcF)
+
 ## How
 
 There is no real magic in it. Here is the flow:
