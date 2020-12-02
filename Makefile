@@ -1,4 +1,4 @@
-IMAGES = routing
+IMAGES = routing image-controller
 
 TAG ?= latest
 REPO_DIR := ${CURDIR}
@@ -15,7 +15,7 @@ build:
 
 $(IMAGES):
 	DOCKER_BUILDKIT=1 docker build $(REPO_DIR) \
-		--file "$(REPO_DIR)/$@/docker/Dockerfile" \
+		--file "$(REPO_DIR)/docker/$@/Dockerfile" \
 		--build-arg GIT_SHA=$(REVISION) \
 		--tag "eirini/$@:$(TAG)"
 

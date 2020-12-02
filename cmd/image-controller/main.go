@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("Failed to create k8s clientset: %s", err)
 	}
 
-	logger := lager.NewLogger("eirini-controller")
+	logger := lager.NewLogger("image-controller")
 	logger.RegisterSink(lager.NewPrettySink(os.Stdout, lager.DEBUG))
 
 	managerOptions := manager.Options{
@@ -53,7 +53,7 @@ func main() {
 		Scheme:             kpackscheme.Scheme,
 		Logger:             NewLagerLogr(logger),
 		LeaderElection:     true,
-		LeaderElectionID:   "eirini-controller-leader",
+		LeaderElectionID:   "image-controller-leader",
 	}
 
 	mgr, err := manager.New(kubeConfig, managerOptions)

@@ -56,21 +56,26 @@ install_ingress_controller() {
     --timeout=90s
 }
 
-install_routing() {
+install_tinypaas() {
   pushd "$REPO_ROOT"
   {
-    make routing
-    make push-routing
-    kubectl apply -f routing/deploy/eirini-routing.yml
+    make routing image-controller
+    make push-routing push-image-controller
+    kubectl apply -f deploy/
   }
   popd
 }
 
+install_kpack() {
+  DOCKERHUB_USERNAME=eiriniuser DOCKERHUB_PASSWORD="$(pass eirini/docker-hub)" $REPO_ROOT/install_kpack.sh
+}
+
 main() {
-  ensure_kind_cluster "eirini-routing"
+  ensure_kind_cluster "eirini-tinypaas"
   install_ingress_controller
   install_eirini
-  install_routing
+  install_kpack
+  install_tinypaas
 }
 
 main

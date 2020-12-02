@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-NAMESPACE=tinypaas
+NAMESPACE=eirini-core
 TMPDIR=$(mktemp -d)
 #trap "rm -rf $TMPDIR" EXIT
 trap "echo $TMPDIR" EXIT
@@ -11,6 +11,8 @@ DOCKER_REGISTRY_SECRET_NAME=tinypaas-registry-credentials
 GIT_SECRET_NAME=tinypaas-git-secret
 BUILDER_NAME=tinypaas-builder
 KPACK_SERVICE_ACCOUNT=tinypaas-service-account
+readonly DOCKERHUB_USERNAME="${DOCKERHUB_USERNAME:?"Please provide dockerhub username"}"
+readonly DOCKERHUB_PASSWORD="${DOCKERHUB_PASSWORD:?"Please provide dockerhub password"}"
 
 pushd $TMPDIR
 echo "Fetching kpack release"
