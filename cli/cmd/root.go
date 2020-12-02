@@ -58,17 +58,26 @@ func Execute() {
 		Run:   getGitPublicKey,
 	}
 
+	logsCmd := &cobra.Command{
+		Use:   "logs",
+		Short: "Streams the app logs",
+		Long:  "Streams the app logs. It first prints last staging logs if available followed by apps logs.",
+		Run:   logs,
+	}
+
 	createCmd.Flags().StringP("name", "n", "", "The name of the application")
 	createCmd.Flags().StringP("git-url", "u", "", "The git remote (the SSH url)")
 	createCmd.Flags().StringP("git-branch", "b", "tiny-paas", "The git branch to track (default tiny-paas)")
 	createCmd.Flags().StringP("docker-repo", "d", "", "Name of the docker repository")
 
 	deleteCmd.Flags().StringP("name", "n", "", "The name of the application to delete")
+	logsCmd.Flags().StringP("name", "n", "", "The name of the application to get the logs of")
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(createCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(gitPublicKeyCmd)
+	rootCmd.AddCommand(logsCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
