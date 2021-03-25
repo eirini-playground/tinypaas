@@ -45,7 +45,7 @@ EOF
 install_eirini() {
   pushd "$EIRINI_DIR"
   {
-    scripts/skaffold run -p helmless
+    scripts/skaffold run
   }
   popd
 }
