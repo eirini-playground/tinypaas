@@ -16,7 +16,7 @@ readonly DOCKERHUB_PASSWORD="${DOCKERHUB_PASSWORD:?"Please provide dockerhub pas
 
 pushd $TMPDIR
 echo "Fetching kpack release"
-wget https://github.com/pivotal/kpack/releases/download/v0.1.4/release-0.1.4.yaml -O kpack.yaml
+wget https://github.com/pivotal/kpack/releases/download/v0.2.2/release-0.2.2.yaml -O kpack.yaml
 
 echo "Installing kpack"
 kubectl apply -f kpack.yaml
