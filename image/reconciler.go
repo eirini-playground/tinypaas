@@ -104,6 +104,9 @@ func (r *Reconciler) desireLRP(image kpackv1alphav1.Image) error {
 			Version:   "v1",
 			DiskMB:    512,
 			AppRoutes: []eiriniv1.Route{},
+			Env: map[string]string{
+				"PORT": "8080",
+			},
 		},
 	}
 
