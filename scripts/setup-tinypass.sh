@@ -4,6 +4,7 @@ set -ex
 
 readonly REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 readonly EIRINI_DIR="$REPO_ROOT/../eirini"
+readonly EIRINI_RELEASE_DIR="$REPO_ROOT/../eirini-release"
 readonly DOCKERHUB_USERNAME=eiriniuser
 readonly DOCKERHUB_PASSWORD="${DOCKERHUB_PASSWORD:-$(pass eirini/docker-hub)}"
 
@@ -43,9 +44,21 @@ EOF
 }
 
 install_eirini() {
+  "$EIRINI_RELEASE_DIR/scripts/generate-secrets.sh" "*.eirini-core.svc" "nothing-to-wiremock-here"
+
   pushd "$EIRINI_DIR"
   {
-    scripts/skaffold run
+    render_dir=$(mktemp -d)
+    trap "rm -rf $render_dir" EXIT
+    ca_bundle="$(kubectl get secret -n eirini-core eirini-instance-index-env-injector-certs -o jsonpath="{.data['tls\.ca']}")"
+    "$EIRINI_RELEASE_DIR/scripts/render-templates.sh" eirini-core "$render_dir" \
+      --values "$EIRINI_RELEASE_DIR/scripts/assets/value-overrides.yml" \
+      --set "webhook_ca_bundle=$ca_bundle,resource_validator_ca_bundle=$ca_bundle"
+    kbld -f "$render_dir" -f "./scripts/kbld-local-eirini.yml" >"$render_dir/rendered.yml"
+    for img in $(grep -oh "kbld:.*" "$render_dir/rendered.yml"); do
+      kind load docker-image --name "eirini-tinypaas" "$img"
+    done
+    kapp -y deploy -a eirini -f "$render_dir/rendered.yml"
   }
   popd
 }
@@ -70,7 +83,7 @@ install_tinypaas() {
 }
 
 install_kpack() {
-  $REPO_ROOT/install_kpack.sh
+  "$REPO_ROOT"/install_kpack.sh
 }
 
 main() {
