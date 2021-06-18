@@ -39,13 +39,34 @@ func printLogs(client kubernetes.Interface, namespace string, pods []corev1.Pod)
 		fmt.Println("No logs found")
 		return
 	}
+
+	pod := selectLatestPod(pods)
 	allContainers := []corev1.Container{}
-	allContainers = append(allContainers, pods[0].Spec.InitContainers...)
-	allContainers = append(allContainers, pods[0].Spec.Containers...)
+	allContainers = append(allContainers, pod.Spec.InitContainers...)
+	allContainers = append(allContainers, pod.Spec.Containers...)
+	fmt.Printf("Showing logs for build #%s\n", pod.Labels["image.kpack.io/buildNumber"])
 	for _, container := range allContainers {
-		err := tailContainerLogs(client, namespace, pods[0].Name, container.Name)
+		err := tailContainerLogs(client, namespace, pod.Name, container.Name)
 		ExitfIfError(err, "failed to get build logs")
 	}
+}
+
+func selectLatestPod(pods []corev1.Pod) corev1.Pod {
+	pod := pods[0]
+	lastBuildNumber := 0
+	for i, p := range pods {
+		currentBuild, err := strconv.Atoi(p.Labels["image.kpack.io/buildNumber"])
+		if err != nil {
+			panic(fmt.Sprintf("failed to parse build number: %s", p.Labels["image.kpack.io/buildNumber"]))
+		}
+
+		if currentBuild > lastBuildNumber {
+			pod = pods[i]
+			lastBuildNumber = currentBuild
+		}
+	}
+
+	return pod
 }
 
 func tailContainerLogs(client kubernetes.Interface, namespace, pod, container string) error {
