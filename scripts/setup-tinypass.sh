@@ -7,6 +7,8 @@ readonly EIRINI_DIR="$REPO_ROOT/../eirini"
 readonly EIRINI_RELEASE_DIR="$REPO_ROOT/../eirini-release"
 readonly DOCKERHUB_USERNAME=eiriniuser
 readonly DOCKERHUB_PASSWORD="${DOCKERHUB_PASSWORD:-$(pass eirini/docker-hub)}"
+export DOCKERHUB_USERNAME
+export DOCKERHUB_PASSWORD
 
 ensure_kind_cluster() {
   local cluster_name
