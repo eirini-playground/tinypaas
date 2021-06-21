@@ -1,3 +1,4 @@
+cli/bin/
 dist
 .envrc
 config.yaml
