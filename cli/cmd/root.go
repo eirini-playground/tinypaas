@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -96,6 +97,12 @@ func Execute() {
 func parseConfig(rootCmd *cobra.Command) (config Config) {
 	configPath, err := rootCmd.Flags().GetString("config")
 	ExitfIfError(err, "Couldn't parse the config argument")
+
+	if configPath == "" {
+		home := os.Getenv("HOME")
+		configPath = filepath.Join(home, ".config", "tinypaas", "config.yaml")
+
+	}
 
 	configContents, err := ioutil.ReadFile(configPath)
 	ExitfIfError(err, "Couldn't read the config file")
